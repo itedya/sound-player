@@ -1,0 +1,32 @@
+{
+  "name": "front",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service build --watch",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "@mdi/js": "^6.1.95",
+    "axios": "^0.21.4",
+    "core-js": "^3.6.5",
+    "filepond": "^4.29.1",
+    "filepond-plugin-file-validate-type": "^1.2.6",
+    "filepond-plugin-image-preview": "^4.6.9",
+    "js-cookie": "^3.0.1",
+    "mdi-vue": "^3.0.7",
+    "vue": "^2.6.11",
+    "vue-filepond": "^6.0.3",
+    "vue-router": "^3.2.0",
+    "vuetify": "^2.5.8"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.0",
+    "@vue/cli-plugin-router": "~4.5.0",
+    "@vue/cli-service": "~4.5.0",
+    "deepmerge": "^4.2.2",
+    "sass": "~1.32",
+    "sass-loader": "^12.1.0",
+    "vue-template-compiler": "^2.6.11"
+  }
+}

@@ -1,33 +1,67 @@
 import { Injectable } from '@nestjs/common';
-import { UsersService } from '../users/users.service';
+import { UsersService } from '@/users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { UserEntity } from '../users/entities/user.entity';
+import { HelixPrivilegedUser } from 'twitch';
+import { UserRole } from '@/users/enums/user-role.enum';
+import { TwitchCredentialsService } from '@/twitch-api/twitch-credentials.service';
+import { User } from '@/users/interfaces/user.interface';
+import { TwitchApiOAuthLoginRequest } from '@/twitch-api/interfaces/twitch-api-oauth-login.request';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private twitchCredentialsService: TwitchCredentialsService
   ) {
   }
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findByUsername(username);
-    if (user && user.password === pass) {
-      const { password, ...result } = user;
-      return result;
+  signJWT(user: User) {
+    return this.jwtService.sign({
+      id: user.id,
+      providerId: user.providerId,
+      username: user.username,
+      role: user.role
+    });
+  }
+
+  async login(ttvAuthData: TwitchApiOAuthLoginRequest, ttvUserData: HelixPrivilegedUser, user: User): Promise<User> {
+    const ttvCredentials = await this.twitchCredentialsService.findByUserId(user.id);
+
+    if (ttvCredentials) {
+      await this.twitchCredentialsService.updateFromRawData({
+        id: ttvCredentials.id,
+        accessToken: ttvAuthData.access_token,
+        refreshToken: ttvAuthData.refresh_token,
+        expiresIn: ttvAuthData.expires_in,
+        user
+      });
+    } else {
+      await this.twitchCredentialsService.create({
+        accessToken: ttvAuthData.access_token,
+        refreshToken: ttvAuthData.refresh_token,
+        expiresIn: ttvAuthData.expires_in,
+        user
+      });
     }
-    return null;
+
+    return user;
   }
 
-  async login(user: any) {
-    const payload = { username: user.username, sub: user.userId };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
-  }
+  async register(ttvAuthData: TwitchApiOAuthLoginRequest, ttvUserData: HelixPrivilegedUser): Promise<User> {
+    const user: User = await this.usersService.create({
+      providerId: ttvUserData.id,
+      username: ttvUserData.name,
+      role: UserRole.NormalUser,
+    });
 
-  async register(username: string, password: string): Promise<UserEntity> {
-    return this.usersService.create(username, password);
+    await this.twitchCredentialsService.create({
+      accessToken: ttvAuthData.access_token,
+      refreshToken: ttvAuthData.refresh_token,
+      expiresIn: ttvAuthData.expires_in,
+      user
+    });
+
+    return user;
   }
 }
